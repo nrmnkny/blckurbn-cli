@@ -5,7 +5,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 
-/* ✨ Parallax effect */
+/* Parallax effect */
 @keyframes parallax {
   0% { transform: scale(1.05) translateY(0); }
   50% { transform: scale(1.1) translateY(-1.5%); }

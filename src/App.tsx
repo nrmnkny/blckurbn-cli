@@ -9,7 +9,6 @@ import AdminArtistManager from './components/AdminArtistManager.tsx';
 import LoginForm from './components/LoginForm.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 
-// Optional future routes
 // import ArtistsPage from './pages/ArtistsPage';
 // import VideosPage from './pages/VideosPage';
 // import ContactPage from './pages/ContactPage';
@@ -40,7 +39,7 @@ function App() {
           }
         />
 
-        {/* Future expansion
+        {/* 
         <Route path="/videos" element={<VideosPage />} />
         <Route path="/contact" element={<ContactPage />} /> */}
       </Routes>

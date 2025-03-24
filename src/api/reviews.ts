@@ -4,13 +4,13 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
 });
 
-// GET all reviews
+// GET
 export const fetchReviews = async () => {
   const res = await api.get('/reviews');
   return res.data;
 };
 
-// POST a new review
+// POST
 export const createReview = async (data: any) => {
   const res = await api.post('/reviews', data);
   return res.data;
