@@ -8,6 +8,7 @@ import FeaturedArtists from './components/FeaturedArtists.tsx';
 import AdminArtistManager from './components/AdminArtistManager.tsx';
 import LoginForm from './components/LoginForm.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
+import ReviewDetail from './pages/ReviewDetail.tsx'; 
 
 // import ArtistsPage from './pages/ArtistsPage';
 // import VideosPage from './pages/VideosPage';
@@ -20,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/reviews/:id" element={<ReviewDetail />} />
         <Route path="/artists" element={<FeaturedArtists />} />
 
         <Route
