@@ -1,4 +1,3 @@
-// src/components/Reviews.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -18,9 +17,13 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
 });
 
+// ✅ Convert snake_case to camelCase
 const fetchReviews = async (): Promise<Review[]> => {
-  const res = await api.get<Review[]>('/reviews');
-  return res.data;
+  const res = await api.get('/reviews');
+  return res.data.map((review: any) => ({
+    ...review,
+    coverArtUrl: review.cover_art_url,
+  }));
 };
 
 const Spinner: React.FC = () => (
@@ -30,36 +33,42 @@ const Spinner: React.FC = () => (
 const ReviewCard: React.FC<{ review: Review }> = ({ review }) => {
   return (
     <Link to={`/reviews/${review.review_id}`}>
-      <div className="h-full flex flex-col bg-gray-900 border border-yellow-700 rounded-2xl p-6 hover:border-yellow-500 transition">
-        <div className="flex items-start mb-4">
+      <div className="h-full flex flex-col bg-[#0f172a] rounded-xl border border-yellow-500 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+
+        <div className="flex items-start p-5 pb-0">
           <img
             src={review.coverArtUrl || '/fallback-cover.png'}
             alt={`${review.track_title} cover`}
-            className="w-16 h-16 rounded-lg object-cover mr-4 flex-shrink-0"
+            className="w-20 h-20 object-cover rounded-xl mr-4"
             loading="lazy"
           />
+
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-yellow-400 leading-snug">
+            <h3 className="text-2xl text-yellow-400 font-bebas tracking-wide leading-tight">
               {review.track_title}
             </h3>
             <p className="text-sm text-yellow-300">{review.artist_name}</p>
           </div>
+
           {typeof review.views === 'number' && (
-            <span className="text-yellow-300 text-sm ml-2 flex items-center">
+            <div className="text-yellow-300 text-sm ml-2 flex items-center">
               👁 {review.views}
-            </span>
+            </div>
           )}
         </div>
 
-        <p className="flex-1 text-gray-300 italic text-sm leading-relaxed mb-4">
-          "{review.review_text}"
-        </p>
+        <div className="px-5 pt-3 pb-5 flex-1 flex flex-col justify-between">
+          <div className="text-gray-200 text-sm italic mb-4 leading-relaxed">
+            "{review.review_text.slice(0, 160)}…"
+          </div>
 
-        <div className="mt-auto flex justify-between items-center text-xs text-gray-400">
-          <span>
-            Reviewed by <span className="text-yellow-200">{review.reviewer_name}</span>
-          </span>
-          <span>⭐ {review.rating}/5</span>
+          <div className="flex justify-between text-xs text-gray-400 border-t border-yellow-700 pt-3">
+            <span>
+              Reviewed by{' '}
+              <span className="text-yellow-300">{review.reviewer_name}</span>
+            </span>
+            <span>⭐ {review.rating}/5</span>
+          </div>
         </div>
       </div>
     </Link>
