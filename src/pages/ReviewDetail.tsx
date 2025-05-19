@@ -1,3 +1,4 @@
+// src/pages/ReviewDetail.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
@@ -9,55 +10,76 @@ interface Review {
   review_text: string;
   rating: number;
   reviewer_name: string;
-  listenUrl?: string;
-  coverArtUrl?: string;
+  spotify_url?: string;
+  youtube_url?: string;
+  cover_art_url?: string;
   views?: number;
 }
 
-const fetchReviewById = async (id: number): Promise<Review> => {
-  const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/reviews/${id}`);
-  const data = res.data;
-
-  // Convert snake_case to camelCase
-  return {
-    ...data,
-    coverArtUrl: data.cover_art_url,
-  };
-};
-
-const fetchSpotifyCover = async (url: string): Promise<string> => {
-  const oembed = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`)
-    .then(res => res.json())
-    .catch(() => null);
-  return oembed?.thumbnail_url || '/fallback-cover.png';
-};
+interface Comment {
+  comment_id: number;
+  user_id:    number;
+  username:   string;
+  body:       string;
+  created_at: string;
+}
 
 const ReviewDetail: React.FC = () => {
   const { id } = useParams<'id'>();
-  const [review, setReview] = useState<Review | null>(null);
-  const [coverUrl, setCoverUrl] = useState<string>('/fallback-cover.png');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [review, setReview]     = useState<Review | null>(null);
+  const [coverUrl, setCoverUrl] = useState('/fallback-cover.png');
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(false);
 
+  // Comments state
+  const [comments, setComments]     = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+
+  // Load review
   useEffect(() => {
     if (!id) return;
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/reviews/${id}`)
+      .then(async res => {
+        const data: any = res.data;
+        setReview(data);
 
-    fetchReviewById(+id)
-      .then(async (r) => {
-        setReview(r);
-
-        if (r.coverArtUrl && r.coverArtUrl.startsWith('http')) {
-          setCoverUrl(r.coverArtUrl);
-        } else if (r.listenUrl?.includes('open.spotify.com')) {
-          const spotifyCover = await fetchSpotifyCover(r.listenUrl);
-          setCoverUrl(spotifyCover);
-        } else {
-          setCoverUrl('/fallback-cover.png');
+        // Determine cover art
+        if (data.cover_art_url) {
+          setCoverUrl(data.cover_art_url);
+        } else if (data.spotify_url) {
+          const oembed = await fetch(
+            `https://open.spotify.com/oembed?url=${encodeURIComponent(data.spotify_url)}`
+          ).then(r => r.json()).catch(() => null);
+          setCoverUrl(oembed?.thumbnail_url || '/fallback-cover.png');
         }
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Load comments
+  useEffect(() => {
+    if (!id) return;
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/reviews/${id}/comments`)
+      .then(res => setComments(res.data))
+      .catch(err => console.error('Error loading comments:', err));
+  }, [id]);
+
+  // Post comment
+  const postComment = async () => {
+    if (!newComment.trim()) return;
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/reviews/${id}/comments`,
+        { body: newComment }
+      );
+      setComments([res.data, ...comments]);
+      setNewComment('');
+    } catch (err) {
+      console.error('Error posting comment:', err);
+      alert('Failed to post comment');
+    }
+  };
 
   if (loading) {
     return (
@@ -66,7 +88,6 @@ const ReviewDetail: React.FC = () => {
       </div>
     );
   }
-
   if (error || !review) {
     return (
       <div className="text-red-500 text-center py-40 bg-black">
@@ -81,14 +102,14 @@ const ReviewDetail: React.FC = () => {
         ← Back to Reviews
       </Link>
 
-      <div className="max-w-3xl mx-auto bg-[#0f172a] rounded-2xl shadow-xl overflow-hidden">
+      {/* Review Card */}
+      <div className="max-w-3xl mx-auto bg-[#0f172a] rounded-2xl shadow-xl overflow-hidden mb-12">
         <img
           src={coverUrl}
           alt={`${review.track_title} cover`}
           className="w-full h-64 object-cover rounded-t-2xl"
           loading="lazy"
         />
-
         <div className="p-8">
           <h1 className="text-4xl font-bebas text-yellow-400 mb-1">
             {review.track_title}
@@ -99,20 +120,18 @@ const ReviewDetail: React.FC = () => {
             {review.review_text}
           </p>
 
-          <div className="flex flex-wrap justify-between items-center text-gray-400 text-sm border-t border-yellow-700 pt-4 mb-6">
+          <div className="flex justify-between items-center text-gray-400 text-sm border-t border-yellow-700 pt-4 mb-6">
             <span>
               Reviewed by{' '}
               <span className="text-yellow-300">{review.reviewer_name}</span>
             </span>
             <span>⭐ {review.rating}/5</span>
-            {typeof review.views === 'number' && (
-              <span>👁 {review.views}</span>
-            )}
+            {typeof review.views === 'number' && <span>👁 {review.views}</span>}
           </div>
 
-          {review.listenUrl && (
+          {review.spotify_url && (
             <a
-              href={review.listenUrl}
+              href={review.spotify_url}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full text-center bg-yellow-400 text-black font-semibold py-3 rounded-lg hover:bg-yellow-300 transition"
@@ -121,6 +140,50 @@ const ReviewDetail: React.FC = () => {
             </a>
           )}
         </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="max-w-3xl mx-auto">
+        <h3 className="text-2xl font-semibold mb-4">Comments</h3>
+
+        {/* Comment form */}
+        {localStorage.getItem('token') ? (
+          <div className="mb-8 space-y-2">
+            <textarea
+              rows={3}
+              className="w-full p-4 bg-[#1e293b] text-white rounded-lg"
+              placeholder="Add your comment…"
+              value={newComment}
+              onChange={e => setNewComment(e.target.value)}
+            />
+            <button
+              onClick={postComment}
+              disabled={!newComment.trim()}
+              className="px-6 py-2 bg-yellow-400 text-black rounded-lg disabled:opacity-50"
+            >
+              Post Comment
+            </button>
+          </div>
+        ) : (
+          <p className="italic text-gray-400 mb-6">
+            <Link to="/login" className="text-yellow-400 hover:underline">Log in</Link> to leave a comment.
+          </p>
+        )}
+
+        {/* Comments list */}
+        <ul className="space-y-6">
+          {comments.map(c => (
+            <li key={c.comment_id} className="bg-[#1e293b] p-6 rounded-2xl border border-yellow-500">
+              <p className="italic text-sm text-gray-400 mb-2">
+                {c.username} • {new Date(c.created_at).toLocaleString()}
+              </p>
+              <p className="text-gray-200">{c.body}</p>
+            </li>
+          ))}
+          {comments.length === 0 && (
+            <p className="text-gray-400 italic">No comments yet — be the first!</p>
+          )}
+        </ul>
       </div>
     </section>
   );
