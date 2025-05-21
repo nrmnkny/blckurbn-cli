@@ -10,7 +10,7 @@ interface Review {
   review_text: string;
   rating: number;
   reviewer_name: string;
-  spotify_url?: string;
+  // spotify_url?: string;  // no longer used
   youtube_url?: string;
   cover_art_url?: string;
   views?: number;
@@ -46,11 +46,9 @@ const ReviewDetail: React.FC = () => {
         // Determine cover art
         if (data.cover_art_url) {
           setCoverUrl(data.cover_art_url);
-        } else if (data.spotify_url) {
-          const oembed = await fetch(
-            `https://open.spotify.com/oembed?url=${encodeURIComponent(data.spotify_url)}`
-          ).then(r => r.json()).catch(() => null);
-          setCoverUrl(oembed?.thumbnail_url || '/fallback-cover.png');
+        } else if (data.youtube_url) {
+          // you can swap this to youtube oEmbed if desired
+          setCoverUrl('/fallback-cover.png');
         }
       })
       .catch(() => setError(true))
@@ -129,16 +127,7 @@ const ReviewDetail: React.FC = () => {
             {typeof review.views === 'number' && <span>👁 {review.views}</span>}
           </div>
 
-          {review.spotify_url && (
-            <a
-              href={review.spotify_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full text-center bg-yellow-400 text-black font-semibold py-3 rounded-lg hover:bg-yellow-300 transition"
-            >
-              ▶ Listen on Spotify
-            </a>
-          )}
+          {/* Removed Spotify button per request */}
         </div>
       </div>
 
@@ -166,21 +155,27 @@ const ReviewDetail: React.FC = () => {
           </div>
         ) : (
           <p className="italic text-gray-400 mb-6">
-            <Link to="/login" className="text-yellow-400 hover:underline">Log in</Link> to leave a comment.
+            <Link to="/login" className="text-yellow-400 hover:underline">
+              Log in
+            </Link>{' '}
+            to leave a comment.
           </p>
         )}
 
         {/* Comments list */}
         <ul className="space-y-6">
           {comments.map(c => (
-            <li key={c.comment_id} className="bg-[#1e293b] p-6 rounded-2xl border border-yellow-500">
+            <li
+              key={c.comment_id}
+              className="bg-[#1e293b] p-6 rounded-2xl border border-yellow-500"
+            >
               <p className="italic text-sm text-gray-400 mb-2">
                 {c.username} • {new Date(c.created_at).toLocaleString()}
               </p>
               <p className="text-gray-200">{c.body}</p>
             </li>
           ))}
-          {comments.length === 0 && (
+          {!comments.length && (
             <p className="text-gray-400 italic">No comments yet — be the first!</p>
           )}
         </ul>
